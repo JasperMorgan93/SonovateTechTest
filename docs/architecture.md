@@ -14,10 +14,7 @@ question maps onto stored fields.
 
 ## 2. Guiding principles
 
-These are specific to this integration, taken from `companies_house_api_engineering_guide.md`
-and applied throughout. For general engineering conventions that apply repo-wide
-(readability, YAGNI, SOLID, dependency hygiene), see
-[docs/coding-principles.md](coding-principles.md).
+Taken from companies house own documentation and applied throughout:
 
 - **Company number is identity.** Company name is never used as a key.
 - **Tolerate schema drift.** Access fields defensively (`.get(...)`), never assert on the
@@ -26,7 +23,7 @@ and applied throughout. For general engineering conventions that apply repo-wide
   paginator, reused by every REST call — not reimplemented per source.
 - **Nothing is hardcoded that could reasonably be configuration** — rate limits, retry
   behaviour, base URLs, endpoint paths are constructor arguments, not constants buried in
-  code. See §6.
+  code. See 6.
 - **Keep the raw response.** Every API response is persisted before anything is derived
   from it, so reprocessing after a bug fix or schema change never requires re-hitting the
   API.
@@ -37,7 +34,7 @@ and applied throughout. For general engineering conventions that apply repo-wide
   inside the 600-requests/5-minutes limit. This design does not attempt to be a
   full-register crawler — that's explicitly what bulk data products and the Streaming API
   are for, per the guide, and is out of scope here (though the ingestion layer is shaped
-  so they can be added — see §7.4).
+  so they can be added — see 7.4).
 
 ## 3. Two phases: ingestion and normalisation
 
@@ -67,7 +64,7 @@ flowchart LR
 ```
 
 **Ingestion is organised by *method*, not by source.** Companies House exposes its data
-three ways — REST, bulk snapshot, streaming (guide §28) — and a future data source might
+three ways — REST, bulk snapshot, streaming (guide 28) — and a future data source might
 arrive via any of those, or something else entirely (a file drop, another vendor's SDK).
 Structuring `ingestion/` around *how data is fetched*, with a shared `IngestionMethod`
 base class, means the REST plumbing (rate limiting, retry, pagination) is written once and
@@ -149,12 +146,8 @@ src/company_data_platform/
 └── cli.py                             # Typer: `ingest`, `normalise`, `answer`, `run`
 ```
 
-No `app/`, no API service. The CLI is the only consumer today — it runs the two pipeline
-phases and writes the six answers to `ANSWERS.md`/stdout. This isn't an ADR-level
-decision: there's no gold/consumption layer to build a UI on top of yet (§3), and a CLI
-wrapping `pipeline.py` is trivial to swap for or add to later without touching
-`core/`, `ingestion/`, or `transform/` — the interface is a thin, disposable layer on top
-of the parts that actually matter.
+No `app/`, no API service. The CLI is the only consumer today; see
+[ADR 0005](adr/0005-cli-first-no-consumption-layer.md).
 
 ## 6. Configuration
 
@@ -207,37 +200,37 @@ belong to the method-specific subclasses.
 
 `RestIngestionMethod(IngestionMethod)` adds what every REST-based source needs: an HTTP
 session (`core/http.py`), the shared rate limiter, the shared retry policy, and the
-generic paginator — each constructed from the config object described in §6. A concrete
+generic paginator — each constructed from the config object described in 6. A concrete
 REST source (e.g. Companies House) implements *what* to call and in what order; it does
 not reimplement *how* to paginate, retry, or rate-limit.
 
 ### 7.3 Companies House (the first concrete source)
 
-- **Auth:** HTTP Basic, API key as username, empty password (guide §4). Read once from
+- **Auth:** HTTP Basic, API key as username, empty password (guide 4). Read once from
   config, never logged.
 - **Rate limiting:** the shared token bucket, configured (by default) for 600 requests /
   5 minutes with a safety margin, applied to every call this process makes — not
-  per-worker, not per-key (guide §5). Overridable via config, e.g. for faster tests.
+  per-worker, not per-key (guide 5). Overridable via config, e.g. for faster tests.
 - **Retry:** the shared `tenacity` policy — exponential backoff with jitter, retrying
   `429` and transient `5xx`/network errors only; `400/401/404/422/406` are not retried
-  (guide §33).
+  (guide 33).
 - **Pagination:** the shared `items_per_page`/`start_index` paginator, used for
-  `/search/companies` (guide §7). The alphabetical/dissolved-search variant
+  `/search/companies` (guide 7). The alphabetical/dissolved-search variant
   (`search_above`/`search_below`) is documented but not implemented — not required by any
   of the six questions.
 - **Versioning:** no explicit `Accept` header, which resolves to the latest resource
-  version (guide §26).
+  version (guide 26).
 - **Errors:** normalised into a `CompaniesHouseError` hierarchy (`AuthenticationError`,
-  `ValidationError`, `NotFoundError`, `RateLimitError`, `ServerError`), matching guide §6.
+  `ValidationError`, `NotFoundError`, `RateLimitError`, `ServerError`), matching guide 6.
 
 ### 7.4 Bulk and streaming (reserved, not built)
 
 `ingestion/bulk/` and `ingestion/streaming/` are empty today but reserved for:
 
 - **`BulkIngestionMethod`** — download and load a snapshot product (e.g. Companies
-  House's monthly company data product), for initial large-scale loads (guide §28).
+  House's monthly company data product), for initial large-scale loads (guide 28).
 - **`StreamingIngestionMethod`** — hold a long-lived connection, checkpoint the last
-  processed timepoint, and apply incremental changes (guide §29).
+  processed timepoint, and apply incremental changes (guide 29).
 
 Both would sit alongside `RestIngestionMethod` under the same `IngestionMethod` contract
 and write into the same `bronze` schema, so normalisation doesn't need to know which
@@ -259,7 +252,7 @@ ingestion method produced a given bronze row.
 
 Search results already carry most fields needed (status, type, dates, address), but the
 profile call is still made per company: it's the authoritative resource per the guide
-(§9), the "sono" result set is small, and having full profiles in bronze is what makes
+(9), the "sono" result set is small, and having full profiles in bronze is what makes
 this project a usable foundation rather than a single-purpose script.
 
 ## 9. Testing strategy
@@ -267,13 +260,13 @@ this project a usable foundation rather than a single-purpose script.
 - **TDD (unit):** `core/` (rate limiter, retry, paginator) and
   `transform/companies_house/normalizer.py` are built test-first against mocked HTTP
   (`responses`) and recorded fixture payloads in `tests/fixtures/`. No test hits the real
-  API. Config-as-dependency-injection (§6) is what makes this practical — tests build
+  API. Config-as-dependency-injection (6) is what makes this practical — tests build
   small, fast configs instead of monkeypatching constants.
 - **BDD (acceptance):** `tests/features/` holds one Gherkin scenario per test question,
   run with `pytest-bdd`, executed against fixture data run through the real
   ingest→normalise pipeline (fixture HTTP, real Postgres via a test container). This is
   literally the six questions as executable acceptance criteria.
-- **Edge cases covered** (from guide §38, trimmed to what's relevant here): dissolved
+- **Edge cases covered** (from guide 38, trimmed to what's relevant here): dissolved
   company with a cessation date, company with multiple previous names, company with
   multiple SIC codes, `limited-partnership` company type, company with a partial/short
   address (missing optional fields), zero-result search, multi-page search result.
