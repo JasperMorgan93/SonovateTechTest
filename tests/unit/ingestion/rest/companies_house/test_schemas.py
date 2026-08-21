@@ -1,7 +1,11 @@
 from datetime import date
 
+import pytest
+from pydantic import ValidationError
+
 from company_data_platform.ingestion.rest.companies_house.schemas import (
     Address,
+    CompanyProfile,
     PreviousCompanyName,
     SearchCompaniesResponse,
     SearchResultItem,
@@ -149,7 +153,9 @@ def test_search_companies_response_ignores_unknown_top_level_field():
     assert response.items[0].company_number == "33333333"
 
 
-from company_data_platform.ingestion.rest.companies_house.schemas import CompanyProfile
+def test_search_result_item_requires_company_number():
+    with pytest.raises(ValidationError):
+        SearchResultItem.model_validate({"title": "SONOVATE LIMITED"})
 
 
 def test_company_profile_parses_full_active_company():
@@ -239,3 +245,8 @@ def test_company_profile_accepts_company_type_by_field_name_too():
     profile = CompanyProfile(company_number="00000009", company_status="active", company_type="ltd")
 
     assert profile.company_type == "ltd"
+
+
+def test_company_profile_requires_company_number():
+    with pytest.raises(ValidationError):
+        CompanyProfile.model_validate({"company_status": "active"})
