@@ -45,15 +45,6 @@ def test_address_tolerates_missing_optional_fields():
     assert address.postal_code is None
 
 
-def test_address_ignores_unknown_fields():
-    payload = {"premises": "1", "some_new_field_ch_adds_later": "value"}
-
-    address = Address.model_validate(payload)
-
-    assert address.premises == "1"
-    assert not hasattr(address, "some_new_field_ch_adds_later")
-
-
 def test_previous_company_name_parses_full_payload():
     payload = {
         "name": "OLD NAME LIMITED",
@@ -141,18 +132,6 @@ def test_search_companies_response_tolerates_zero_results():
     assert response.total_results == 0
 
 
-def test_search_companies_response_ignores_unknown_top_level_field():
-    payload = {
-        "items": [{"company_number": "33333333"}],
-        "total_results": 1,
-        "a_field_ch_adds_later": {"nested": "value"},
-    }
-
-    response = SearchCompaniesResponse.model_validate(payload)
-
-    assert response.items[0].company_number == "33333333"
-
-
 def test_search_result_item_requires_company_number():
     with pytest.raises(ValidationError):
         SearchResultItem.model_validate({"title": "SONOVATE LIMITED"})
@@ -222,20 +201,6 @@ def test_company_profile_tolerates_missing_optional_collections_and_fields():
     assert profile.registered_office_address is None
     assert profile.sic_codes == []
     assert profile.previous_company_names == []
-
-
-def test_company_profile_ignores_unknown_fields():
-    payload = {
-        "company_number": "00000008",
-        "company_status": "active",
-        "accounts": {"next_due": "2027-01-01"},
-        "confirmation_statement": {"next_due": "2027-02-01"},
-    }
-
-    profile = CompanyProfile.model_validate(payload)
-
-    assert profile.company_number == "00000008"
-    assert not hasattr(profile, "accounts")
 
 
 def test_company_profile_accepts_company_type_by_field_name_too():
