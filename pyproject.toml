@@ -5,11 +5,15 @@ description = "Sonovate tech test: Companies House data platform"
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.7,<3",
+    "requests>=2.31,<3",
+    "tenacity>=8.2,<9",
+    "pydantic-settings>=2.2,<3",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0,<9",
+    "responses>=0.25,<1",
 ]
 
 [build-system]
