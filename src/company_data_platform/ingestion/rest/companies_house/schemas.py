@@ -9,7 +9,7 @@ optional one is absent.
 
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Address(BaseModel):
@@ -78,3 +78,32 @@ class SearchCompaniesResponse(BaseModel):
     start_index: int | None = None
     total_results: int | None = None
     kind: str | None = None
+
+
+class CompanyProfile(BaseModel):
+    """A company profile from `GET /company/{company_number}`.
+
+    This is the root resource per the Companies House guide: treat it
+    as authoritative and follow its (not-yet-modelled) resource links
+    for deeper data. Only `company_number` and `company_status` are
+    guaranteed; every other field — including both list fields, which
+    default to empty rather than `None` so callers can iterate without
+    a null check — is optional. `company_type` reads from the raw
+    `type` key: Companies House names this field differently on the
+    profile endpoint than on `/search/companies`.
+    """
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+
+    company_number: str
+    company_status: str
+    company_name: str | None = None
+    company_status_detail: str | None = None
+    company_type: str | None = Field(default=None, alias="type")
+    company_subtype: str | None = None
+    jurisdiction: str | None = None
+    date_of_creation: date | None = None
+    date_of_cessation: date | None = None
+    registered_office_address: Address | None = None
+    sic_codes: list[str] = []
+    previous_company_names: list[PreviousCompanyName] = []

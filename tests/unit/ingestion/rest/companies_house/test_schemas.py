@@ -147,3 +147,95 @@ def test_search_companies_response_ignores_unknown_top_level_field():
     response = SearchCompaniesResponse.model_validate(payload)
 
     assert response.items[0].company_number == "33333333"
+
+
+from company_data_platform.ingestion.rest.companies_house.schemas import CompanyProfile
+
+
+def test_company_profile_parses_full_active_company():
+    payload = {
+        "company_number": "12345678",
+        "company_name": "SONOVATE LIMITED",
+        "company_status": "active",
+        "company_status_detail": None,
+        "type": "ltd",
+        "company_subtype": None,
+        "jurisdiction": "england-wales",
+        "date_of_creation": "2016-03-14",
+        "date_of_cessation": None,
+        "registered_office_address": {
+            "premises": "1",
+            "address_line_1": "Example Street",
+            "locality": "London",
+            "postal_code": "EC1A 1AA",
+            "country": "United Kingdom",
+        },
+        "sic_codes": ["62012", "62020"],
+        "previous_company_names": [
+            {"name": "OLD NAME LIMITED", "effective_from": "2015-01-01", "ceased_on": "2016-03-14"}
+        ],
+    }
+
+    profile = CompanyProfile.model_validate(payload)
+
+    assert profile.company_number == "12345678"
+    assert profile.company_name == "SONOVATE LIMITED"
+    assert profile.company_status == "active"
+    assert profile.company_type == "ltd"
+    assert profile.jurisdiction == "england-wales"
+    assert profile.date_of_creation == date(2016, 3, 14)
+    assert profile.registered_office_address is not None
+    assert profile.registered_office_address.postal_code == "EC1A 1AA"
+    assert profile.sic_codes == ["62012", "62020"]
+    assert len(profile.previous_company_names) == 1
+    assert profile.previous_company_names[0].name == "OLD NAME LIMITED"
+
+
+def test_company_profile_parses_dissolved_company_with_cessation_date():
+    payload = {
+        "company_number": "00000006",
+        "company_status": "dissolved",
+        "date_of_creation": "1900-01-01",
+        "date_of_cessation": "1990-12-31",
+    }
+
+    profile = CompanyProfile.model_validate(payload)
+
+    assert profile.company_status == "dissolved"
+    assert profile.date_of_cessation == date(1990, 12, 31)
+
+
+def test_company_profile_tolerates_missing_optional_collections_and_fields():
+    payload = {"company_number": "00000007", "company_status": "active"}
+
+    profile = CompanyProfile.model_validate(payload)
+
+    assert profile.company_name is None
+    assert profile.company_subtype is None
+    assert profile.company_type is None
+    assert profile.registered_office_address is None
+    assert profile.sic_codes == []
+    assert profile.previous_company_names == []
+
+
+def test_company_profile_ignores_unknown_fields():
+    payload = {
+        "company_number": "00000008",
+        "company_status": "active",
+        "accounts": {"next_due": "2027-01-01"},
+        "confirmation_statement": {"next_due": "2027-02-01"},
+    }
+
+    profile = CompanyProfile.model_validate(payload)
+
+    assert profile.company_number == "00000008"
+    assert not hasattr(profile, "accounts")
+
+
+def test_company_profile_accepts_company_type_by_field_name_too():
+    # populate_by_name=True means code constructing a CompanyProfile
+    # directly (e.g. in a future test fixture) can use the attribute
+    # name, not just the raw API's `type` alias.
+    profile = CompanyProfile(company_number="00000009", company_status="active", company_type="ltd")
+
+    assert profile.company_type == "ltd"
