@@ -1,5 +1,6 @@
 # tests/unit/ingestion/rest/companies_house/test_client.py
 import pytest
+import requests
 import responses
 
 from company_data_platform.core.config import RateLimitConfig, RetryConfig
@@ -9,6 +10,7 @@ from company_data_platform.ingestion.rest.companies_house.exceptions import (
     AuthenticationError,
     NotFoundError,
     RateLimitError,
+    TransportError,
     ValidationError,
 )
 
@@ -160,3 +162,31 @@ def test_iter_all_search_results_paginates_across_multiple_pages():
     results = list(client.iter_all_search_results("sono"))
 
     assert [item.company_number for item in results] == ["1", "2", "3"]
+
+
+@responses.activate
+def test_connection_error_exhausting_retries_raises_transport_error():
+    responses.add(
+        responses.GET,
+        f"{BASE_URL}/company/00000006",
+        body=requests.exceptions.ConnectionError("connection reset"),
+    )
+    client = CompaniesHouseClient(_config())
+
+    with pytest.raises(TransportError):
+        client.get_company("00000006")
+
+
+@responses.activate
+def test_non_json_200_body_raises_transport_error():
+    responses.add(
+        responses.GET,
+        f"{BASE_URL}/company/00000007",
+        body="not json",
+        status=200,
+        content_type="text/plain",
+    )
+    client = CompaniesHouseClient(_config())
+
+    with pytest.raises(TransportError):
+        client.get_company("00000007")

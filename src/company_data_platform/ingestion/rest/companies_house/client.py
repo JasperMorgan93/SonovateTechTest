@@ -18,6 +18,7 @@ from company_data_platform.ingestion.rest.companies_house.exceptions import (
     NotFoundError,
     RateLimitError,
     ServerError,
+    TransportError,
     ValidationError,
 )
 from company_data_platform.ingestion.rest.companies_house.schemas import (
@@ -85,12 +86,17 @@ class CompaniesHouseClient:
             response = self._retrying(do_request)
         except RetryableStatusError as exc:
             response = exc.response
+        except (requests.ConnectionError, requests.Timeout) as exc:
+            raise TransportError(0, f"Network error calling {url}: {exc}") from exc
 
         return self._parse_or_raise(response)
 
     def _parse_or_raise(self, response: requests.Response) -> dict[str, Any]:
         if response.status_code == 200:
-            return response.json()
+            try:
+                return response.json()
+            except ValueError as exc:
+                raise TransportError(response.status_code, f"Non-JSON body from {response.url}") from exc
 
         status = response.status_code
         message = f"Companies House API returned {status} for {response.url}"

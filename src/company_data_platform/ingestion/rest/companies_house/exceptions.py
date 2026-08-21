@@ -28,3 +28,10 @@ class RateLimitError(CompaniesHouseError):
 
 class ServerError(CompaniesHouseError):
     """5xx - a transient server error, raised only once retries are exhausted."""
+
+
+class TransportError(CompaniesHouseError):
+    """Raised when the underlying HTTP transport fails after retries are
+    exhausted (connection error, timeout), or a 200 response body cannot
+    be parsed as JSON. Uses status_code=0 since no real HTTP status
+    applies to a transport-level failure."""
