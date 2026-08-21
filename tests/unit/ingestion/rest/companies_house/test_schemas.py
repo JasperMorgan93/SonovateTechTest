@@ -3,6 +3,8 @@ from datetime import date
 from company_data_platform.ingestion.rest.companies_house.schemas import (
     Address,
     PreviousCompanyName,
+    SearchCompaniesResponse,
+    SearchResultItem,
 )
 
 
@@ -70,3 +72,78 @@ def test_previous_company_name_tolerates_missing_dates():
     assert previous_name.name == "ANOTHER OLD NAME LTD"
     assert previous_name.effective_from is None
     assert previous_name.ceased_on is None
+
+
+def test_search_result_item_parses_full_payload():
+    payload = {
+        "company_number": "12345678",
+        "title": "SONOVATE LIMITED",
+        "company_type": "ltd",
+        "company_status": "active",
+        "date_of_creation": "2016-03-14",
+        "date_of_cessation": None,
+        "address": {"premises": "1", "locality": "London"},
+        "description": "12345678 - incorporated on 14 March 2016",
+        "kind": "search-results#company",
+    }
+
+    item = SearchResultItem.model_validate(payload)
+
+    assert item.company_number == "12345678"
+    assert item.title == "SONOVATE LIMITED"
+    assert item.company_status == "active"
+    assert item.date_of_creation == date(2016, 3, 14)
+    assert item.date_of_cessation is None
+    assert item.address is not None
+    assert item.address.locality == "London"
+
+
+def test_search_result_item_requires_only_company_number():
+    payload = {"company_number": "00000006"}
+
+    item = SearchResultItem.model_validate(payload)
+
+    assert item.company_number == "00000006"
+    assert item.title is None
+    assert item.address is None
+
+
+def test_search_companies_response_parses_multi_item_page():
+    payload = {
+        "items": [
+            {"company_number": "11111111", "title": "SONOVATE ONE LTD"},
+            {"company_number": "22222222", "title": "SONOVATE TWO LTD"},
+        ],
+        "items_per_page": 20,
+        "start_index": 0,
+        "total_results": 2,
+        "kind": "search#companies",
+    }
+
+    response = SearchCompaniesResponse.model_validate(payload)
+
+    assert response.total_results == 2
+    assert len(response.items) == 2
+    assert response.items[0].company_number == "11111111"
+    assert response.items[1].title == "SONOVATE TWO LTD"
+
+
+def test_search_companies_response_tolerates_zero_results():
+    payload = {"items": [], "items_per_page": 20, "start_index": 0, "total_results": 0}
+
+    response = SearchCompaniesResponse.model_validate(payload)
+
+    assert response.items == []
+    assert response.total_results == 0
+
+
+def test_search_companies_response_ignores_unknown_top_level_field():
+    payload = {
+        "items": [{"company_number": "33333333"}],
+        "total_results": 1,
+        "a_field_ch_adds_later": {"nested": "value"},
+    }
+
+    response = SearchCompaniesResponse.model_validate(payload)
+
+    assert response.items[0].company_number == "33333333"

@@ -44,3 +44,37 @@ class PreviousCompanyName(BaseModel):
     name: str | None = None
     effective_from: date | None = None
     ceased_on: date | None = None
+
+
+class SearchResultItem(BaseModel):
+    """A single company result from `GET /search/companies`.
+
+    Only `company_number` is guaranteed present; every other field is
+    optional because a search result is a lighter-weight projection
+    than a full company profile and Companies House does not document
+    a fixed set of fields for it.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    company_number: str
+    title: str | None = None
+    company_type: str | None = None
+    company_status: str | None = None
+    date_of_creation: date | None = None
+    date_of_cessation: date | None = None
+    address: Address | None = None
+    description: str | None = None
+    kind: str | None = None
+
+
+class SearchCompaniesResponse(BaseModel):
+    """The paginated envelope returned by `GET /search/companies`."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    items: list[SearchResultItem] = []
+    items_per_page: int | None = None
+    start_index: int | None = None
+    total_results: int | None = None
+    kind: str | None = None
