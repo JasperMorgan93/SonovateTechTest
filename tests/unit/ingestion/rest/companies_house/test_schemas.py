@@ -1,4 +1,9 @@
-from company_data_platform.ingestion.rest.companies_house.schemas import Address
+from datetime import date
+
+from company_data_platform.ingestion.rest.companies_house.schemas import (
+    Address,
+    PreviousCompanyName,
+)
 
 
 def test_address_parses_full_payload():
@@ -41,3 +46,27 @@ def test_address_ignores_unknown_fields():
 
     assert address.premises == "1"
     assert not hasattr(address, "some_new_field_ch_adds_later")
+
+
+def test_previous_company_name_parses_full_payload():
+    payload = {
+        "name": "OLD NAME LIMITED",
+        "effective_from": "2015-01-01",
+        "ceased_on": "2019-06-30",
+    }
+
+    previous_name = PreviousCompanyName.model_validate(payload)
+
+    assert previous_name.name == "OLD NAME LIMITED"
+    assert previous_name.effective_from == date(2015, 1, 1)
+    assert previous_name.ceased_on == date(2019, 6, 30)
+
+
+def test_previous_company_name_tolerates_missing_dates():
+    payload = {"name": "ANOTHER OLD NAME LTD"}
+
+    previous_name = PreviousCompanyName.model_validate(payload)
+
+    assert previous_name.name == "ANOTHER OLD NAME LTD"
+    assert previous_name.effective_from is None
+    assert previous_name.ceased_on is None
