@@ -28,7 +28,7 @@ def _config(**overrides) -> CompaniesHouseConfig:
 
 
 @responses.activate
-def test_search_companies_parses_response():
+def test_search_companies_returns_raw_response_body():
     responses.add(
         responses.GET,
         f"{BASE_URL}/search/companies",
@@ -44,12 +44,12 @@ def test_search_companies_parses_response():
 
     result = client.search_companies("sono")
 
-    assert result.total_results == 1
-    assert result.items[0].company_number == "12345678"
+    assert result["total_results"] == 1
+    assert result["items"][0]["company_number"] == "12345678"
 
 
 @responses.activate
-def test_get_company_parses_response():
+def test_get_company_returns_raw_response_body():
     responses.add(
         responses.GET,
         f"{BASE_URL}/company/12345678",
@@ -60,8 +60,8 @@ def test_get_company_parses_response():
 
     profile = client.get_company("12345678")
 
-    assert profile.company_number == "12345678"
-    assert profile.company_type == "ltd"
+    assert profile["company_number"] == "12345678"
+    assert profile["type"] == "ltd"
 
 
 @responses.activate
@@ -126,7 +126,7 @@ def test_transient_500_then_200_succeeds_after_retry():
 
     profile = client.get_company("00000004")
 
-    assert profile.company_number == "00000004"
+    assert profile["company_number"] == "00000004"
     assert len(responses.calls) == 2
 
 
@@ -160,7 +160,7 @@ def test_iter_all_search_results_paginates_across_multiple_pages():
 
     results = list(client.iter_all_search_results("sono"))
 
-    assert [item.company_number for item in results] == ["1", "2", "3"]
+    assert [item["company_number"] for item in results] == ["1", "2", "3"]
 
 
 @responses.activate

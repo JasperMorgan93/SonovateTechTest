@@ -21,21 +21,19 @@ from company_data_platform.ingestion.rest.companies_house.exceptions import (
     TransportError,
 )
 from company_data_platform.ingestion.rest.companies_house.pagination import paginate_by_start_index
-from company_data_platform.ingestion.rest.companies_house.schemas import (
-    CompanyProfile,
-    SearchCompaniesResponse,
-    SearchResultItem,
-)
 
 _VALIDATION_STATUSES = frozenset({400, 406, 422})
 
 
 class CompaniesHouseClient:
-    """Typed calls to the Companies House REST API.
+    """Raw calls to the Companies House REST API.
 
     Applies authentication, rate limiting, and retry uniformly to every
-    call via the shared `core/` plumbing; endpoint-specific logic (paths,
-    response schemas) lives here.
+    call via the shared `core/` plumbing; endpoint-specific logic (paths)
+    lives here. Returns Companies House's response bodies as plain
+    dicts, unvalidated — schema validation is a separate concern that
+    happens when bronze-stored payloads are read for canonical mapping,
+    not at fetch time.
     """
 
     def __init__(self, config: CompaniesHouseConfig, session: requests.Session | None = None) -> None:
@@ -47,27 +45,25 @@ class CompaniesHouseClient:
 
     def search_companies(
         self, query: str, *, items_per_page: int | None = None, start_index: int = 0
-    ) -> SearchCompaniesResponse:
-        """Call `GET /search/companies`."""
+    ) -> dict[str, Any]:
+        """Call `GET /search/companies`, returning the raw response body."""
         params = {
             "q": query,
             "items_per_page": items_per_page or self._config.default_items_per_page,
             "start_index": start_index,
         }
-        payload = self._request("GET", self._config.search_companies_path, params=params)
-        return SearchCompaniesResponse.model_validate(payload)
+        return self._request("GET", self._config.search_companies_path, params=params)
 
-    def get_company(self, company_number: str) -> CompanyProfile:
-        """Call `GET /company/{company_number}`."""
+    def get_company(self, company_number: str) -> dict[str, Any]:
+        """Call `GET /company/{company_number}`, returning the raw response body."""
         path = self._config.company_profile_path.format(company_number=company_number)
-        payload = self._request("GET", path)
-        return CompanyProfile.model_validate(payload)
+        return self._request("GET", path)
 
-    def iter_all_search_results(self, query: str) -> Iterator[SearchResultItem]:
-        """Paginate `search_companies` to exhaustion."""
+    def iter_all_search_results(self, query: str) -> Iterator[dict[str, Any]]:
+        """Paginate `search_companies` to exhaustion, yielding raw item dicts."""
         items_per_page = self._config.default_items_per_page
 
-        def fetch_page(start_index: int) -> SearchCompaniesResponse:
+        def fetch_page(start_index: int) -> dict[str, Any]:
             return self.search_companies(query, items_per_page=items_per_page, start_index=start_index)
 
         yield from paginate_by_start_index(fetch_page, items_per_page)
