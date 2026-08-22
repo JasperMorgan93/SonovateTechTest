@@ -1,7 +1,8 @@
 # Companies House API — Engineering Guide
 
 **Prepared:** 20 August 2026  
-**Scope:** Companies House Public Data API, with adjacent guidance on the Document API, Streaming API and bulk data products where they materially affect architecture.
+**Scope:** Companies House Public Data API, with adjacent guidance on the Document API, Streaming API and bulk data products where they materially affect architecture.  
+**Do not treat this is gospel. We should always check for new information on the website and update here when necessary**: See links below.
 
 ## 1. Executive summary
 
