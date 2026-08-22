@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 class RateLimitConfig(BaseModel):
     """Token bucket parameters for a REST source's rate limit."""
 
-    max_requests: int = 600
+    max_requests: int = 550
     period_seconds: float = 300.0
     max_concurrency: int = 1
 

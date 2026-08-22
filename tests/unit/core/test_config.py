@@ -1,10 +1,10 @@
 from company_data_platform.core.config import RateLimitConfig, RestSourceConfig, RetryConfig
 
 
-def test_rate_limit_config_defaults_match_companies_house_documented_limit():
+def test_rate_limit_config_default_has_safety_margin_below_companies_house_limit():
     config = RateLimitConfig()
 
-    assert config.max_requests == 600
+    assert config.max_requests == 550
     assert config.period_seconds == 300.0
 
 

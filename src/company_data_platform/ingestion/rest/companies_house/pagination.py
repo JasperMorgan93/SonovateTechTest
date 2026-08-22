@@ -20,9 +20,12 @@ def paginate_by_start_index(
 ) -> Iterator[SearchResultItem]:
     """Yield every `SearchResultItem` across all pages of a search response.
 
-    Calls `fetch_page(start_index)` starting at 0 and incrementing by
-    `items_per_page`, stopping when a page returns no items or
-    `total_results` has been reached.
+    Calls `fetch_page(start_index)` starting at 0 and advancing by the
+    number of items actually returned each time (not `items_per_page`),
+    since Companies House caps `items_per_page` server-side and may
+    return a shorter page than requested — advancing by the requested
+    size would silently skip records. Stops when a page returns no
+    items or `total_results` has been reached.
     """
     start_index = 0
     while True:
@@ -30,6 +33,6 @@ def paginate_by_start_index(
         if not page.items:
             return
         yield from page.items
-        start_index += items_per_page
+        start_index += len(page.items)
         if page.total_results is not None and start_index >= page.total_results:
             return

@@ -115,7 +115,6 @@ src/company_data_platform/
 │   ├── http.py                        # requests session wrapper (timeouts, headers)
 │   ├── rate_limiter.py                # token bucket, configured by RateLimitConfig
 │   ├── retry.py                       # tenacity policy, configured by RetryConfig
-│   ├── pagination.py                  # generic start_index paginator
 │   └── config.py                      # RateLimitConfig, RetryConfig, RestSourceConfig, top-level Settings
 ├── ingestion/                       # INGESTION PHASE — produces bronze, organised by method
 │   ├── base.py                        # IngestionMethod ABC — run(**params) -> persists raw payloads to bronze
@@ -125,6 +124,7 @@ src/company_data_platform/
 │   │       ├── config.py                  # CompaniesHouseConfig(RestSourceConfig) — base_url, endpoint paths, api_key
 │   │       ├── ingestor.py                # CompaniesHouseIngestor(RestIngestionMethod)
 │   │       ├── client.py                  # typed calls: search_companies(), get_company()
+│   │       ├── pagination.py              # start_index paginator, concrete to Companies House search today
 │   │       ├── auth.py                    # HTTP Basic (key as username, empty password)
 │   │       ├── schemas.py                 # tolerant pydantic models for raw payload validation
 │   │       └── exceptions.py              # CompaniesHouseError hierarchy
@@ -148,6 +148,12 @@ src/company_data_platform/
 
 No `app/`, no API service. The CLI is the only consumer today; see
 [ADR 0005](adr/0005-cli-first-no-consumption-layer.md).
+
+`pagination.py` lives under `ingestion/rest/companies_house/`, not `core/`, because it's
+written directly against `SearchCompaniesResponse`/`SearchResultItem` — it is concrete to
+Companies House's `/search/companies` endpoint today, not a generic paginator, since that's
+the only paginated endpoint that exists. It would move to `core/` and generalize (e.g. via a
+`TypeVar`) once a second paginated endpoint exists; doing so now would be speculative.
 
 ## 6. Configuration
 
@@ -180,6 +186,10 @@ module-level environment read scattered through the code. This is what makes `co
   `COMPANIES_HOUSE__RATE_LIMIT__MAX_REQUESTS=600`), documented in `.env.example`.
 - The same pattern is the convention future sources follow — a `<Source>Config` extending
   the relevant method base config, injected rather than imported.
+- In practice, `CompaniesHouseConfig` currently loads its own environment directly via
+  `pydantic-settings` rather than being assembled by a top-level `Settings` aggregator —
+  there's only one source today, so the aggregator described above is a future addition
+  once a second source exists, not something built yet.
 
 ## 7. Ingestion phase design
 

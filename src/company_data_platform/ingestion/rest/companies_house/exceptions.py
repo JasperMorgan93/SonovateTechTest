@@ -14,7 +14,7 @@ class AuthenticationError(CompaniesHouseError):
     """401 - the API key was rejected."""
 
 
-class ValidationError(CompaniesHouseError):
+class RequestValidationError(CompaniesHouseError):
     """400, 406, or 422 - the request itself was invalid."""
 
 

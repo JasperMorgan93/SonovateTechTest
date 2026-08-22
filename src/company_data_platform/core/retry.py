@@ -21,10 +21,11 @@ class RetryableStatusError(Exception):
 def build_retrying(config: RetryConfig) -> tenacity.Retrying:
     """Build a `tenacity.Retrying` from `RetryConfig`.
 
-    Retries `RetryableStatusError` and transient network errors
-    (connection failures, timeouts) with exponential backoff and
-    optional jitter; reraises the last exception once attempts are
-    exhausted rather than raising tenacity's own `RetryError`.
+    Retries `RetryableStatusError` and any `requests.RequestException`
+    (connection failures, timeouts, chunked encoding errors, and other
+    transient transport failures) with exponential backoff and optional
+    jitter; reraises the last exception once attempts are exhausted
+    rather than raising tenacity's own `RetryError`.
     """
     wait = (
         tenacity.wait_exponential_jitter(initial=config.backoff_base_seconds, max=config.backoff_max_seconds)
@@ -34,8 +35,6 @@ def build_retrying(config: RetryConfig) -> tenacity.Retrying:
     return tenacity.Retrying(
         stop=tenacity.stop_after_attempt(config.max_attempts),
         wait=wait,
-        retry=tenacity.retry_if_exception_type(
-            (RetryableStatusError, requests.ConnectionError, requests.Timeout)
-        ),
+        retry=tenacity.retry_if_exception_type((RetryableStatusError, requests.RequestException)),
         reraise=True,
     )

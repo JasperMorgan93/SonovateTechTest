@@ -7,7 +7,6 @@ from typing import Any
 import requests
 
 from company_data_platform.core.http import HttpClient
-from company_data_platform.core.pagination import paginate_by_start_index
 from company_data_platform.core.rate_limiter import TokenBucketRateLimiter
 from company_data_platform.core.retry import RetryableStatusError, build_retrying
 from company_data_platform.ingestion.rest.companies_house.auth import build_auth
@@ -17,10 +16,11 @@ from company_data_platform.ingestion.rest.companies_house.exceptions import (
     CompaniesHouseError,
     NotFoundError,
     RateLimitError,
+    RequestValidationError,
     ServerError,
     TransportError,
-    ValidationError,
 )
+from company_data_platform.ingestion.rest.companies_house.pagination import paginate_by_start_index
 from company_data_platform.ingestion.rest.companies_house.schemas import (
     CompanyProfile,
     SearchCompaniesResponse,
@@ -86,7 +86,7 @@ class CompaniesHouseClient:
             response = self._retrying(do_request)
         except RetryableStatusError as exc:
             response = exc.response
-        except (requests.ConnectionError, requests.Timeout) as exc:
+        except requests.RequestException as exc:
             raise TransportError(0, f"Network error calling {url}: {exc}") from exc
 
         return self._parse_or_raise(response)
@@ -103,7 +103,7 @@ class CompaniesHouseClient:
         if status == 401:
             raise AuthenticationError(status, message)
         if status in _VALIDATION_STATUSES:
-            raise ValidationError(status, message)
+            raise RequestValidationError(status, message)
         if status == 404:
             raise NotFoundError(status, message)
         if status == 429:

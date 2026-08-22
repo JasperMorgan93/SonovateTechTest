@@ -1,4 +1,3 @@
-# tests/unit/ingestion/rest/companies_house/test_client.py
 import pytest
 import requests
 import responses
@@ -10,8 +9,8 @@ from company_data_platform.ingestion.rest.companies_house.exceptions import (
     AuthenticationError,
     NotFoundError,
     RateLimitError,
+    RequestValidationError,
     TransportError,
-    ValidationError,
 )
 
 BASE_URL = "https://example.test/companies-house"
@@ -104,11 +103,11 @@ def test_404_raises_not_found_error_without_retry():
 
 
 @responses.activate
-def test_422_raises_validation_error_without_retry():
+def test_422_raises_request_validation_error_without_retry():
     responses.add(responses.GET, f"{BASE_URL}/company/00000003", status=422)
     client = CompaniesHouseClient(_config())
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(RequestValidationError):
         client.get_company("00000003")
 
     assert len(responses.calls) == 1
