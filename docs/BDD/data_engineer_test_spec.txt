@@ -1,0 +1,35 @@
+Sonovate Data Engineer Tech Test
+
+Source:
+Companies House is a key external source of data for us. The publicly available API is documented
+here, and anyone can set up a free account to access:
+https://developer.companieshouse.gov.uk/
+https://developer-specs.company-information.service.gov.uk/companies-house-public-dataapi/reference
+
+Note: Though not clearly stated in the documentation, the maximum number of items you can list in
+the company search per page is 100 (specify higher, and it will just return 100). The start index also
+cannot be too high (it’ll start to return errors if your request goes beyond the first 1000 results). This
+limits the number of search results you can fetch.
+
+Task:
+Using Python and the Companies House API please answer the questions below.
+Submit your code, along with the answers (please send as a zip file so it’s not blocked by any email
+filters).
+
+Note: We are using this as an opportunity to evaluate your engineering skills, so while the questions
+are a relatively simple, please approach this as if you were building a piece of production code. Use
+this as an opportunity to demonstrate your best engineering practices (e.g. SOLID, TDD/BDD etc.)
+and show your working
+
+Questions:
+1. How many companies are there which match the search term “sono”?
+(Note the following questions are all in the context of the set of companies from Q1)
+2. Of these how many are active?
+3. Of those dissolved what is the average life of the company (incorporation date to cessation
+date) in days?
+4. When was the first limited-partnership created?
+5. Which companies also have “vate” in their title?
+6. Taking the digits from the premises part of the address to make a number for each company
+(e.g. 6-8 = 68, 14b = 14, 1st Floor 45 Main St= 145 etc) what is the sum for each company
+type?
+
