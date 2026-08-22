@@ -100,14 +100,16 @@ class CompaniesHouseClient:
 
         status = response.status_code
         message = f"Companies House API returned {status} for {response.url}"
-        if status == 401:
-            raise AuthenticationError(status, message)
-        if status in _VALIDATION_STATUSES:
-            raise RequestValidationError(status, message)
-        if status == 404:
-            raise NotFoundError(status, message)
-        if status == 429:
-            raise RateLimitError(status, message)
-        if 500 <= status < 600:
-            raise ServerError(status, message)
-        raise CompaniesHouseError(status, message)
+        match status:
+            case 401:
+                raise AuthenticationError(status, message)
+            case status if status in _VALIDATION_STATUSES:
+                raise RequestValidationError(status, message)
+            case 404:
+                raise NotFoundError(status, message)
+            case 429:
+                raise RateLimitError(status, message)
+            case status if 500 <= status < 600:
+                raise ServerError(status, message)
+            case _:
+                raise CompaniesHouseError(status, message)

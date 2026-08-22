@@ -18,6 +18,7 @@ Canonical entry point for AI coding agents (Claude, GitHub Copilot, Cursor, or a
 - Keep changes scoped to what was asked — see "Scoped changes" in the coding principles.
 - Structural or cross-cutting decisions get an ADR (`docs/adr/`), not a comment or a one-off choice buried in code.
 - Update the relevant docs (this file, `docs/`, `README.md`) when behaviour, interfaces, or conventions change.
+- Whenever structural changes in the code base or routes occur - always re-read AGENT and README files and see if the information no longer aligns to the code. If so, raise this with the user to correct it.
 
 ## Repo map
 
