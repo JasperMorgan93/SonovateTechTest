@@ -12,5 +12,24 @@ script.
 - **Coding principles (for humans and agents working in this repo):** [docs/coding-principles.md](docs/coding-principles.md)
 - **Engineering principles (how we work, beyond code):** [docs/engineering-principles.md](docs/engineering-principles.md)
 
-Setup, run and test instructions will be added here once the implementation lands —
-this repo currently contains architecture/design docs only, no code yet.
+## Setup & running
+
+```bash
+pip install -e ".[dev]"
+```
+
+Set `COMPANIES_HOUSE_API_KEY` in your environment, then run:
+
+```bash
+python scripts/ingest_sono_search.py
+```
+
+This fetches every reachable page of `/search/companies?q=sono`, writes each raw page to
+`src/company_data_platform/storage/bronze/ch_search_result/`, and prints the total number
+of matching companies (tech test Question 1).
+
+Run the test suite with:
+
+```bash
+pytest -v
+```

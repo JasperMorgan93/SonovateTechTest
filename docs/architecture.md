@@ -105,7 +105,9 @@ Both are re-runnable without side effects: bronze rows are keyed by
 `(source_url, retrieved_at)` and normalisation is a pure read-of-bronze /
 upsert-into-silver step keyed by `company_number` (and child natural keys for
 one-to-many tables). Re-running either step never duplicates data or requires a fresh API
-call.
+call. The current file-based bronze store (see `storage/bronze/writer.py`) appends a new
+JSON file per ingestion run rather than upserting by key, so this idempotency guarantee
+describes the target Postgres-backed design, not yet the current implementation.
 
 ## 5. Component breakdown
 
@@ -319,7 +321,7 @@ bulk download still benefits from shared retry). No change to `transform/`, `sto
 or the CLI structure required.
 
 **A new source using an existing method** (e.g. another REST-based company registry):
-add `ingestion/rest/<name>/` (config, client, auth, schemas, exceptions) subclassing
+add `ingestion/rest/<name>/` (config, client, auth, exceptions) subclassing
 `RestIngestionMethod`, and `transform/<name>/normalizer.py` mapping its raw shape onto the
 existing canonical models where the entity genuinely overlaps (e.g. another source of
 `CanonicalCompany`), or new canonical models where it doesn't. Silver rows carry
@@ -337,6 +339,7 @@ SonovateTechTest/
 ├── .env.example
 ├── alembic.ini
 ├── migrations/
+├── scripts/                        # standalone entry-point scripts, e.g. ingest_sono_search.py
 ├── src/company_data_platform/
 │   ├── core/
 │   ├── ingestion/

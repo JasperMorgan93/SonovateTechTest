@@ -50,3 +50,22 @@ def test_ingest_search_results_advances_by_actual_page_size_not_requested_size(t
     total = ingest_search_results("sono", client, config, base_dir=tmp_path)
 
     assert total == 4
+
+
+def test_ingest_search_results_reports_total_results_not_fetched_count(tmp_path, monkeypatch):
+    from company_data_platform.ingestion.rest.companies_house import pagination as pagination_module
+
+    monkeypatch.setattr(pagination_module, "MAX_START_INDEX", 2)
+
+    pages = {
+        0: {"items": [{"company_number": "1"}], "total_results": 5000},
+        1: {"items": [{"company_number": "2"}], "total_results": 5000},
+    }
+    client = _StubClient(pages)
+    config = CompaniesHouseConfig(api_key="test-key")
+
+    total = ingest_search_results("sono", client, config, base_dir=tmp_path)
+
+    assert total == 5000
+    written_files = list((tmp_path / "ch_search_result").glob("sono_*.json"))
+    assert len(written_files) == 2

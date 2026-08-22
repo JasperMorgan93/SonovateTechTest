@@ -66,7 +66,7 @@ class CompaniesHouseClient:
         def fetch_page(start_index: int) -> dict[str, Any]:
             return self.search_companies(query, items_per_page=items_per_page, start_index=start_index)
 
-        yield from paginate_by_start_index(fetch_page, items_per_page)
+        yield from paginate_by_start_index(fetch_page)
 
     def _request(self, method: str, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         url = f"{self._config.base_url}{path}"

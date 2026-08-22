@@ -23,5 +23,6 @@ Canonical entry point for AI coding agents (Claude, GitHub Copilot, Cursor, or a
 ## Repo map
 
 - `src/company_data_platform/` — `ingestion` (bulk, rest, streaming), `transform` (canonical), `storage`, `analytics`, `core`
+- `scripts/` — standalone entry-point scripts (not part of the installable package), e.g. `ingest_sono_search.py`
 - `tests/` — `unit`, `features`, `fixtures`
 - `docs/` — architecture, data model, ADRs, coding/engineering principles
