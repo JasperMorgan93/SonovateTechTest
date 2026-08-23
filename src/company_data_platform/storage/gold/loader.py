@@ -23,6 +23,7 @@ from company_data_platform.transform.canonical.company import (
     CanonicalSearchMatch,
 )
 
+GOLD_DIR = Path(__file__).parent
 _ADDRESS_COLUMNS = ["company_number", "premises"]
 
 
@@ -47,3 +48,8 @@ def load_gold_companies(query: str, silver_dir: Path = SILVER_DIR) -> pd.DataFra
     gold = search_matches.merge(companies, on="company_number", how="left", suffixes=("", "_company"))
     gold = gold.merge(addresses, on="company_number", how="left")
     return gold
+
+def write_gold_companies(gold: pd.DataFrame, gold_dir: Path) -> None:
+    """Write the gold DataFrame to one parquet file in ``gold_dir``."""
+    gold_dir.mkdir(parents=True, exist_ok=True)
+    gold.to_parquet(gold_dir / "companies.parquet", index=False)

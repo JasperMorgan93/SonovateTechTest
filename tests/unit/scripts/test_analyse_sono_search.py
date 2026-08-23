@@ -30,8 +30,10 @@ def test_analyse_sono_search_answers_all_six_questions_from_silver(tmp_path):
         [CanonicalSearchMatch(query="sono", company_number="1", retrieved_at=datetime(2026, 8, 23, tzinfo=timezone.utc))]
     )
 
-    answers = analyse_sono_search("sono", silver_dir=tmp_path)
+    gold_dir = tmp_path / "gold"
+    answers = analyse_sono_search("sono", silver_dir=tmp_path, gold_dir=gold_dir)
 
+    assert (gold_dir / "companies.parquet").exists()
     assert answers.total_matches == 1
     assert answers.active_count == 0
     assert answers.avg_dissolved_lifespan_days == 10.0

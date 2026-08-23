@@ -12,14 +12,15 @@ gold DataFrame (`storage/gold/loader.py`) and answers the six questions from
 from pathlib import Path
 
 from company_data_platform.analytics.sono_test_answers import SonoAnswers, compute_sono_answers
-from company_data_platform.storage.gold.loader import SILVER_DIR, load_gold_companies
+from company_data_platform.storage.gold.loader import GOLD_DIR, SILVER_DIR, load_gold_companies, write_gold_companies
 
 QUERY = "sono"
 
 
-def analyse_sono_search(query: str, silver_dir: Path = SILVER_DIR) -> SonoAnswers:
-    """Load `query`'s gold DataFrame from `silver_dir` and answer all six test-spec questions."""
+def analyse_sono_search(query: str, silver_dir: Path = SILVER_DIR, gold_dir: Path = GOLD_DIR) -> SonoAnswers:
+    """Load `query`'s gold DataFrame and answer all six test-spec questions."""
     gold = load_gold_companies(query, silver_dir=silver_dir)
+    write_gold_companies(gold, gold_dir)
     return compute_sono_answers(gold)
 
 
