@@ -42,7 +42,14 @@ class BronzeWriter:
 
 
 class CompaniesHouseBronzeWriter(BronzeWriter):
-    """Writes Companies House API responses to bronze."""
+    """Writes Companies House API responses to bronze.
+    
+    When the imports expand to different sources, this subclass will own 
+    the source-specific subdirectory names and the entity-shaped methods 
+    (e.g. `write_search_result_page`).
+    
+    We should move this class into a sensible folder structure.
+    """
 
     def write_search_result_page(
         self,
