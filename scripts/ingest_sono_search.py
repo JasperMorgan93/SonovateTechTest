@@ -7,14 +7,13 @@ by reading `total_results` directly from the first page of the search.
 """
 
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from company_data_platform.ingestion.rest.companies_house.client import CompaniesHouseClient
 from company_data_platform.ingestion.rest.companies_house.config import CompaniesHouseConfig
 from company_data_platform.ingestion.rest.companies_house.exceptions import CompaniesHouseError
 from company_data_platform.ingestion.rest.companies_house.pagination import paginate_pages_by_start_index
-from company_data_platform.storage.bronze.writer import BRONZE_DIR, write_search_result_page
+from company_data_platform.storage.bronze.writer import CompaniesHouseBronzeWriter
 
 QUERY = "sono"
 
@@ -23,7 +22,7 @@ def ingest_search_results(
     query: str,
     client: CompaniesHouseClient,
     config: CompaniesHouseConfig,
-    base_dir: Path = BRONZE_DIR,
+    writer: CompaniesHouseBronzeWriter,
 ) -> int:
     """Fetch every reachable page of `query`'s search results, write each
     to bronze, and return the total company count reported by the API.
@@ -49,13 +48,12 @@ def ingest_search_results(
             f"{config.base_url}{config.search_companies_path}"
             f"?q={query}&items_per_page={items_per_page}&start_index={start_index}"
         )
-        write_search_result_page(
+        writer.write_search_result_page(
             query=query,
             start_index=start_index,
             payload=page,
             retrieved_at=retrieved_at,
             source_url=source_url,
-            base_dir=base_dir,
         )
 
     return total_results if total_results is not None else 0
@@ -66,9 +64,10 @@ def main() -> None:
     print the total count Companies House reports for the query."""
     config = CompaniesHouseConfig()
     client = CompaniesHouseClient(config)
+    writer = CompaniesHouseBronzeWriter()
 
     try:
-        total_companies = ingest_search_results(QUERY, client, config)
+        total_companies = ingest_search_results(QUERY, client, config, writer)
     except CompaniesHouseError as exc:
         print(f"Ingestion failed while fetching '{QUERY}' results: {exc}")
         raise

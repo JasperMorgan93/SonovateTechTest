@@ -1,6 +1,6 @@
-"""Writes raw Companies House API responses to the bronze layer as JSON files.
+"""Writes raw API responses to the bronze layer as JSON files.
 
-Bronze preserves exactly what Companies House sent, alongside retrieval
+Bronze preserves exactly what a source sent, alongside retrieval
 metadata, so reprocessing after a bug fix or schema change never
 requires re-hitting the API. This is a file-based bronze store — a
 deliberate simplification of the Postgres-backed design in
@@ -17,37 +17,59 @@ BRONZE_DIR = Path(__file__).parent
 _SEARCH_RESULT_SUBDIR = "ch_search_result"
 
 
-def write_search_result_page(
-    query: str,
-    start_index: int,
-    payload: dict[str, Any],
-    retrieved_at: datetime,
-    source_url: str,
-    base_dir: Path = BRONZE_DIR,
-) -> Path:
-    """Write one page of a /search/companies response to bronze.
+class BronzeWriter:
+    """Base class for writing raw API responses to bronze as JSON files.
 
-    One JSON file per page, under `<base_dir>/ch_search_result/`, named
-    with the query, start index, and retrieval timestamp so files sort
-    chronologically and never collide across pages or runs. The file
-    contains the raw payload plus enough metadata to answer "what did
-    Companies House actually tell us, and when" without re-calling the
-    API.
+    Holds the state a real ingestion run will eventually need across
+    many writes — today just the output directory, but this is the
+    natural place for a shared run ID or high-watermark timestamp once
+    ingestion needs to correlate or resume across multiple bronze
+    writes in the same run. Source-specific subclasses (e.g.
+    `CompaniesHouseBronzeWriter`) add the entity-shaped methods; this
+    class only owns the shared "write this record as JSON" mechanics.
     """
-    output_dir = base_dir / _SEARCH_RESULT_SUBDIR
-    output_dir.mkdir(parents=True, exist_ok=True)
 
-    retrieved_at_slug = retrieved_at.strftime("%Y%m%dT%H%M%S%fZ")
-    filename = f"{query}_start{start_index}_{retrieved_at_slug}.json"
+    def __init__(self, base_dir: Path = BRONZE_DIR) -> None:
+        self._base_dir = base_dir
 
-    record = {
-        "query": query,
-        "start_index": start_index,
-        "source_url": source_url,
-        "retrieved_at": retrieved_at.isoformat(),
-        "payload": payload,
-    }
+    def write_record(self, subdir: str, filename: str, record: dict[str, Any]) -> Path:
+        """Write one JSON record to `<base_dir>/<subdir>/<filename>`."""
+        output_dir = self._base_dir / subdir
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / filename
+        output_path.write_text(json.dumps(record, indent=2), encoding="utf-8")
+        return output_path
 
-    output_path = output_dir / filename
-    output_path.write_text(json.dumps(record, indent=2), encoding="utf-8")
-    return output_path
+
+class CompaniesHouseBronzeWriter(BronzeWriter):
+    """Writes Companies House API responses to bronze."""
+
+    def write_search_result_page(
+        self,
+        query: str,
+        start_index: int,
+        payload: dict[str, Any],
+        retrieved_at: datetime,
+        source_url: str,
+    ) -> Path:
+        """Write one page of a /search/companies response to bronze.
+
+        One JSON file per page, under `<base_dir>/ch_search_result/`, named
+        with the query, start index, and retrieval timestamp so files sort
+        chronologically and never collide across pages or runs. The file
+        contains the raw payload plus enough metadata to answer "what did
+        Companies House actually tell us, and when" without re-calling the
+        API.
+        """
+        retrieved_at_slug = retrieved_at.strftime("%Y%m%dT%H%M%S%fZ")
+        filename = f"{query}_start{start_index}_{retrieved_at_slug}.json"
+
+        record = {
+            "query": query,
+            "start_index": start_index,
+            "source_url": source_url,
+            "retrieved_at": retrieved_at.isoformat(),
+            "payload": payload,
+        }
+
+        return self.write_record(_SEARCH_RESULT_SUBDIR, filename, record)

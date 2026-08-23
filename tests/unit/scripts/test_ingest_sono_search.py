@@ -1,4 +1,5 @@
 from company_data_platform.ingestion.rest.companies_house.config import CompaniesHouseConfig
+from company_data_platform.storage.bronze.writer import CompaniesHouseBronzeWriter
 from scripts.ingest_sono_search import ingest_search_results
 
 
@@ -20,8 +21,9 @@ def test_ingest_search_results_writes_every_page_and_returns_total_count(tmp_pat
     }
     client = _StubClient(pages)
     config = CompaniesHouseConfig(api_key="test-key")
+    writer = CompaniesHouseBronzeWriter(base_dir=tmp_path)
 
-    total = ingest_search_results("sono", client, config, base_dir=tmp_path)
+    total = ingest_search_results("sono", client, config, writer)
 
     assert total == 3
     written_files = list((tmp_path / "ch_search_result").glob("sono_*.json"))
@@ -32,8 +34,9 @@ def test_ingest_search_results_stops_on_empty_page_and_writes_nothing(tmp_path):
     pages = {0: {"items": [], "total_results": 0}}
     client = _StubClient(pages)
     config = CompaniesHouseConfig(api_key="test-key")
+    writer = CompaniesHouseBronzeWriter(base_dir=tmp_path)
 
-    total = ingest_search_results("sono", client, config, base_dir=tmp_path)
+    total = ingest_search_results("sono", client, config, writer)
 
     assert total == 0
     assert not (tmp_path / "ch_search_result").exists()
@@ -46,8 +49,9 @@ def test_ingest_search_results_advances_by_actual_page_size_not_requested_size(t
     }
     client = _StubClient(pages)
     config = CompaniesHouseConfig(api_key="test-key")
+    writer = CompaniesHouseBronzeWriter(base_dir=tmp_path)
 
-    total = ingest_search_results("sono", client, config, base_dir=tmp_path)
+    total = ingest_search_results("sono", client, config, writer)
 
     assert total == 4
 
@@ -63,8 +67,9 @@ def test_ingest_search_results_reports_total_results_not_fetched_count(tmp_path,
     }
     client = _StubClient(pages)
     config = CompaniesHouseConfig(api_key="test-key")
+    writer = CompaniesHouseBronzeWriter(base_dir=tmp_path)
 
-    total = ingest_search_results("sono", client, config, base_dir=tmp_path)
+    total = ingest_search_results("sono", client, config, writer)
 
     assert total == 5000
     written_files = list((tmp_path / "ch_search_result").glob("sono_*.json"))
