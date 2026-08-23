@@ -16,6 +16,14 @@ def test_file_silver_sink_is_a_silver_sink(tmp_path):
     assert isinstance(FileSilverSink(base_dir=tmp_path), SilverSink)
 
 
+def test_file_silver_sink_defaults_to_the_package_own_directory():
+    from company_data_platform.storage.silver.file_sink import SILVER_DIR
+
+    sink = FileSilverSink()
+
+    assert sink._base_dir == SILVER_DIR
+
+
 def test_silver_sink_cannot_be_instantiated_directly():
     with pytest.raises(TypeError):
         SilverSink()

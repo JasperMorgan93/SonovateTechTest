@@ -5,3 +5,6 @@ services:
       - .env
     volumes:
       - ./data/bronze/ch_search_result:/app/src/company_data_platform/storage/bronze/ch_search_result
+      - ./data/silver/company:/app/src/company_data_platform/storage/silver/company
+      - ./data/silver/company_address:/app/src/company_data_platform/storage/silver/company_address
+      - ./data/silver/company_search_match:/app/src/company_data_platform/storage/silver/company_search_match

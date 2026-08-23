@@ -17,6 +17,8 @@ from company_data_platform.transform.canonical.company import (
     CanonicalSearchMatch,
 )
 
+SILVER_DIR = Path(__file__).parent
+
 _COMPANY_SUBDIR = "company"
 _ADDRESS_SUBDIR = "company_address"
 _SEARCH_MATCH_SUBDIR = "company_search_match"
@@ -25,7 +27,7 @@ _SEARCH_MATCH_SUBDIR = "company_search_match"
 class FileSilverSink(SilverSink):
     """Writes canonical records to `<base_dir>/<entity>/<natural_key>.json`."""
 
-    def __init__(self, base_dir: Path) -> None:
+    def __init__(self, base_dir: Path = SILVER_DIR) -> None:
         self._base_dir = base_dir
 
     def write_companies(self, companies: Sequence[CanonicalCompany]) -> None:
