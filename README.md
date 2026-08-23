@@ -21,15 +21,18 @@ cp .env.example .env   # then fill in COMPANIES_HOUSE_API_KEY
 docker compose run --rm app
 ```
 
-This fetches every reachable page of `/search/companies?q=sono`, writes each raw page to
-`./data/bronze/ch_search_result/` on the host (mounted into the container), and prints the
-total number of matching companies (tech test Question 1).
+That one command runs the full pipeline — ingest (bronze), normalise (silver), then
+analyse (gold) — and prints the answers to all six tech-test questions
+(`scripts/run_all.py`). Bronze and silver data are written to `./data/` on the host
+(mounted into the container), so re-running is idempotent and each stage's output
+persists between runs.
 
-To map that bronze data into the canonical silver layer (`./data/silver/` on the host),
-run the normalisation script instead:
+Each stage can also be run on its own, e.g. to re-run just one step:
 
 ```bash
-docker compose run --rm app scripts/normalise_sono_search.py
+docker compose run --rm app scripts/ingest_sono_search.py     # bronze — fetches from the API
+docker compose run --rm app scripts/normalise_sono_search.py  # silver — bronze -> canonical model
+docker compose run --rm app scripts/analyse_sono_search.py    # gold — silver -> the six answers
 ```
 
 After changing `src/`, `scripts/`, `pyproject.toml`, or `uv.lock`, rebuild the image before
@@ -47,11 +50,18 @@ docker compose up --build     # rebuild and run in one step
 uv sync --extra dev
 ```
 
-Set `COMPANIES_HOUSE_API_KEY` in your environment, then run:
+Set `COMPANIES_HOUSE_API_KEY` in your environment, then run the whole pipeline:
+
+```bash
+uv run python scripts/run_all.py
+```
+
+or each stage individually:
 
 ```bash
 uv run python scripts/ingest_sono_search.py
 uv run python scripts/normalise_sono_search.py
+uv run python scripts/analyse_sono_search.py
 ```
 
 Run the test suite with:

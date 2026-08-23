@@ -19,9 +19,9 @@ from company_data_platform.transform.canonical.company import (
 
 SILVER_DIR = Path(__file__).parent
 
-_COMPANY_SUBDIR = "company"
-_ADDRESS_SUBDIR = "company_address"
-_SEARCH_MATCH_SUBDIR = "company_search_match"
+COMPANY_SUBDIR = "company"
+ADDRESS_SUBDIR = "company_address"
+SEARCH_MATCH_SUBDIR = "company_search_match"
 
 
 class FileSilverSink(SilverSink):
@@ -34,7 +34,7 @@ class FileSilverSink(SilverSink):
         """Write one file per company, named by `company_number`."""
         for company in companies:
             write_json_record(
-                self._base_dir / _COMPANY_SUBDIR,
+                self._base_dir / COMPANY_SUBDIR,
                 f"{company.company_number}.json",
                 company.model_dump(mode="json"),
             )
@@ -43,7 +43,7 @@ class FileSilverSink(SilverSink):
         """Write one file per address, named by `company_number` and `address_type`."""
         for address in addresses:
             write_json_record(
-                self._base_dir / _ADDRESS_SUBDIR,
+                self._base_dir / ADDRESS_SUBDIR,
                 f"{address.company_number}_{address.address_type}.json",
                 address.model_dump(mode="json"),
             )
@@ -52,7 +52,7 @@ class FileSilverSink(SilverSink):
         """Write one file per search match, named by `query` and `company_number`."""
         for match in matches:
             write_json_record(
-                self._base_dir / _SEARCH_MATCH_SUBDIR,
+                self._base_dir / SEARCH_MATCH_SUBDIR,
                 f"{match.query}_{match.company_number}.json",
                 match.model_dump(mode="json"),
             )
