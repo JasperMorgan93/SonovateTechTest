@@ -223,3 +223,4 @@ __marimo__/
 
 # Bronze layer output (generated at ingestion runtime, not source)
 src/company_data_platform/storage/bronze/ch_search_result/
+data/

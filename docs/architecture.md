@@ -301,15 +301,18 @@ this project a usable foundation rather than a single-purpose script.
 ## 10. Containerisation & dev experience
 
 ```
-docker-compose.yml     postgres  +  app (build from Dockerfile, runs the CLI)
-Dockerfile              multi-stage: poetry install → slim runtime image
-alembic/                schema migrations for bronze/silver (and gold, reserved)
-.env.example            COMPANIES_HOUSE_API_KEY, DATABASE_URL, ...
+docker-compose.yml     app only today (build from Dockerfile, runs ingest_sono_search.py)
+Dockerfile              multi-stage: uv sync → slim runtime image, no build toolchain in the final layer
+.env.example            COMPANIES_HOUSE_API_KEY
+uv.lock                 committed, reproducible dependency resolution
 ```
 
-`docker compose up -d db && docker compose run --rm app python -m company_data_platform.cli run --query sono`
-is the entire "install and use" path — no local Python environment required. A local
-(non-Docker) dev path via Poetry is documented in the README for running tests quickly.
+`docker compose run --rm app` is the entire "install and use" path today — no local
+Python environment required, no database, since bronze is still file-based (see section 8
+and `storage/bronze/writer.py`). A `db` service, `alembic/` migrations, and a `cli.py`
+entry point are planned once the Postgres-backed bronze/silver design lands, matching the
+component breakdown in section 5 — not built yet. A local (non-Docker) dev path via `uv
+sync` is documented in the README for running tests quickly.
 
 ## 11. Extensibility
 

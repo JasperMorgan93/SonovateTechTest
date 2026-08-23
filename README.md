@@ -14,22 +14,31 @@ script.
 
 ## Setup & running
 
+**Docker (no local Python required):**
+
 ```bash
-pip install -e ".[dev]"
+cp .env.example .env   # then fill in COMPANIES_HOUSE_API_KEY
+docker compose run --rm app
+```
+
+This fetches every reachable page of `/search/companies?q=sono`, writes each raw page to
+`./data/bronze/ch_search_result/` on the host (mounted into the container), and prints the
+total number of matching companies (tech test Question 1).
+
+**Local (non-Docker) dev, using [uv](https://docs.astral.sh/uv/):**
+
+```bash
+uv sync --extra dev
 ```
 
 Set `COMPANIES_HOUSE_API_KEY` in your environment, then run:
 
 ```bash
-python scripts/ingest_sono_search.py
+uv run python scripts/ingest_sono_search.py
 ```
-
-This fetches every reachable page of `/search/companies?q=sono`, writes each raw page to
-`src/company_data_platform/storage/bronze/ch_search_result/`, and prints the total number
-of matching companies (tech test Question 1).
 
 Run the test suite with:
 
 ```bash
-pytest -v
+uv run pytest -v
 ```

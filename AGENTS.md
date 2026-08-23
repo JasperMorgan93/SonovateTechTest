@@ -26,3 +26,5 @@ Canonical entry point for AI coding agents (Claude, GitHub Copilot, Cursor, or a
 - `scripts/` — standalone entry-point scripts (not part of the installable package), e.g. `ingest_sono_search.py`
 - `tests/` — `unit`, `features`, `fixtures`
 - `docs/` — architecture, data model, ADRs, coding/engineering principles
+- `Dockerfile`, `docker-compose.yml` — containerised run path (`docker compose run --rm app`), no local Python required
+- `pyproject.toml` + `uv.lock` — dependency management via [uv](https://docs.astral.sh/uv/) (`uv sync --extra dev`), not `pip`/Poetry
