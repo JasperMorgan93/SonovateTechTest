@@ -25,6 +25,13 @@ This fetches every reachable page of `/search/companies?q=sono`, writes each raw
 `./data/bronze/ch_search_result/` on the host (mounted into the container), and prints the
 total number of matching companies (tech test Question 1).
 
+To map that bronze data into the canonical silver layer (`./data/silver/` on the host),
+run the normalisation script instead:
+
+```bash
+docker compose run --rm app scripts/normalise_sono_search.py
+```
+
 After changing `src/`, `scripts/`, `pyproject.toml`, or `uv.lock`, rebuild the image before
 running again:
 
@@ -44,6 +51,7 @@ Set `COMPANIES_HOUSE_API_KEY` in your environment, then run:
 
 ```bash
 uv run python scripts/ingest_sono_search.py
+uv run python scripts/normalise_sono_search.py
 ```
 
 Run the test suite with:
