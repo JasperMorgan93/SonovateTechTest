@@ -229,4 +229,7 @@ src/company_data_platform/storage/silver/company/
 src/company_data_platform/storage/silver/company_address/
 src/company_data_platform/storage/silver/company_search_match/
 
+# Gold layer output (generated at analysis runtime, not source)
+src/company_data_platform/storage/gold/
+
 data/

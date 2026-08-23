@@ -23,7 +23,7 @@ from company_data_platform.transform.canonical.company import (
     CanonicalSearchMatch,
 )
 
-GOLD_DIR = Path(__file__).parent
+GOLD_DIR = Path("data/gold")
 _ADDRESS_COLUMNS = ["company_number", "premises"]
 
 

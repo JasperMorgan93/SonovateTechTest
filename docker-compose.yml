@@ -8,4 +8,4 @@ services:
       - ./data/silver/company:/app/src/company_data_platform/storage/silver/company
       - ./data/silver/company_address:/app/src/company_data_platform/storage/silver/company_address
       - ./data/silver/company_search_match:/app/src/company_data_platform/storage/silver/company_search_match
-      - ./data/gold:/app/src/company_data_platform/storage/gold
+      - ./data/gold:/app/data/gold
