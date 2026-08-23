@@ -1,0 +1,13 @@
+.git/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.superpowers/
+docs/
+tests/
+.env
+.env.*
+!.env.example
+src/company_data_platform/storage/bronze/ch_search_result/

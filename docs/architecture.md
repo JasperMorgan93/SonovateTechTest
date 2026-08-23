@@ -105,7 +105,9 @@ Both are re-runnable without side effects: bronze rows are keyed by
 `(source_url, retrieved_at)` and normalisation is a pure read-of-bronze /
 upsert-into-silver step keyed by `company_number` (and child natural keys for
 one-to-many tables). Re-running either step never duplicates data or requires a fresh API
-call.
+call. The current file-based bronze store (see `storage/bronze/writer.py`) appends a new
+JSON file per ingestion run rather than upserting by key, so this idempotency guarantee
+describes the target Postgres-backed design, not yet the current implementation.
 
 ## 5. Component breakdown
 
@@ -123,10 +125,9 @@ src/company_data_platform/
 │   │   └── companies_house/
 │   │       ├── config.py                  # CompaniesHouseConfig(RestSourceConfig) — base_url, endpoint paths, api_key
 │   │       ├── ingestor.py                # CompaniesHouseIngestor(RestIngestionMethod)
-│   │       ├── client.py                  # typed calls: search_companies(), get_company()
+│   │       ├── client.py                  # raw calls: search_companies(), get_company() -> dict
 │   │       ├── pagination.py              # start_index paginator, concrete to Companies House search today
 │   │       ├── auth.py                    # HTTP Basic (key as username, empty password)
-│   │       ├── schemas.py                 # tolerant pydantic models for raw payload validation
 │   │       └── exceptions.py              # CompaniesHouseError hierarchy
 │   ├── bulk/                          # reserved: future BulkIngestionMethod
 │   └── streaming/                     # reserved: future StreamingIngestionMethod
@@ -137,9 +138,11 @@ src/company_data_platform/
 │   └── companies_house/
 │       └── normalizer.py                # CompaniesHouseNormalizer(Normalizer)
 ├── storage/
-│   ├── db.py                          # engine/session, schema-qualified metadata
-│   ├── bronze_models.py
-│   └── silver_models.py
+│   ├── db.py                          # engine/session, schema-qualified metadata (future — not built yet)
+│   ├── bronze_models.py               # future — not built yet
+│   ├── silver_models.py               # future — not built yet
+│   └── bronze/
+│       └── writer.py                    # file-based bronze writer (current, simplified stand-in for the above)
 ├── analytics/
 │   └── sono_test_answers.py           # the 6 questions, pure functions over silver
 ├── pipeline.py                        # ingest(query) -> normalise(), parameterised
@@ -150,10 +153,22 @@ No `app/`, no API service. The CLI is the only consumer today; see
 [ADR 0005](adr/0005-cli-first-no-consumption-layer.md).
 
 `pagination.py` lives under `ingestion/rest/companies_house/`, not `core/`, because it's
-written directly against `SearchCompaniesResponse`/`SearchResultItem` — it is concrete to
+written directly against the raw `/search/companies` response shape — it is concrete to
 Companies House's `/search/companies` endpoint today, not a generic paginator, since that's
 the only paginated endpoint that exists. It would move to `core/` and generalize (e.g. via a
 `TypeVar`) once a second paginated endpoint exists; doing so now would be speculative.
+
+As of this slice, `CompaniesHouseClient` and `pagination.py` return/operate on raw
+response dicts, not validated Pydantic models — the `schemas.py` tolerant-validation
+layer described in earlier drafts of this document has been removed. Validating the raw
+JSON shape and mapping it to the canonical model are the same conceptual step (see the
+"Canonical Mapping + Validation + Cleansing" stage in
+`docs/BDD/companies_house_data_platform_architecture.md`), so a separate raw-schema
+layer between fetch and canonical mapping was pure duplication once nothing else
+consumed it. Bronze — not a Pydantic model — is what preserves raw fidelity now: the
+untouched `response.json()` dict is written straight to `storage/bronze/` by
+`storage/bronze/writer.py`, a file-based store that is a deliberate simplification of the
+Postgres-backed bronze design in `docs/data-model.md` for this first ingestion slice.
 
 ## 6. Configuration
 
@@ -286,15 +301,18 @@ this project a usable foundation rather than a single-purpose script.
 ## 10. Containerisation & dev experience
 
 ```
-docker-compose.yml     postgres  +  app (build from Dockerfile, runs the CLI)
-Dockerfile              multi-stage: poetry install → slim runtime image
-alembic/                schema migrations for bronze/silver (and gold, reserved)
-.env.example            COMPANIES_HOUSE_API_KEY, DATABASE_URL, ...
+docker-compose.yml     app only today (build from Dockerfile, runs ingest_sono_search.py)
+Dockerfile              multi-stage: uv sync → slim runtime image, no build toolchain in the final layer
+.env.example            COMPANIES_HOUSE_API_KEY
+uv.lock                 committed, reproducible dependency resolution
 ```
 
-`docker compose up -d db && docker compose run --rm app python -m company_data_platform.cli run --query sono`
-is the entire "install and use" path — no local Python environment required. A local
-(non-Docker) dev path via Poetry is documented in the README for running tests quickly.
+`docker compose run --rm app` is the entire "install and use" path today — no local
+Python environment required, no database, since bronze is still file-based (see section 8
+and `storage/bronze/writer.py`). A `db` service, `alembic/` migrations, and a `cli.py`
+entry point are planned once the Postgres-backed bronze/silver design lands, matching the
+component breakdown in section 5 — not built yet. A local (non-Docker) dev path via `uv
+sync` is documented in the README for running tests quickly.
 
 ## 11. Extensibility
 
@@ -306,7 +324,7 @@ bulk download still benefits from shared retry). No change to `transform/`, `sto
 or the CLI structure required.
 
 **A new source using an existing method** (e.g. another REST-based company registry):
-add `ingestion/rest/<name>/` (config, client, auth, schemas, exceptions) subclassing
+add `ingestion/rest/<name>/` (config, client, auth, exceptions) subclassing
 `RestIngestionMethod`, and `transform/<name>/normalizer.py` mapping its raw shape onto the
 existing canonical models where the entity genuinely overlaps (e.g. another source of
 `CanonicalCompany`), or new canonical models where it doesn't. Silver rows carry
@@ -324,6 +342,7 @@ SonovateTechTest/
 ├── .env.example
 ├── alembic.ini
 ├── migrations/
+├── scripts/                        # standalone entry-point scripts, e.g. ingest_sono_search.py
 ├── src/company_data_platform/
 │   ├── core/
 │   ├── ingestion/

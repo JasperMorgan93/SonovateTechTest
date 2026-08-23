@@ -18,9 +18,14 @@ Canonical entry point for AI coding agents (Claude, GitHub Copilot, Cursor, or a
 - Keep changes scoped to what was asked — see "Scoped changes" in the coding principles.
 - Structural or cross-cutting decisions get an ADR (`docs/adr/`), not a comment or a one-off choice buried in code.
 - Update the relevant docs (this file, `docs/`, `README.md`) when behaviour, interfaces, or conventions change.
+- Whenever structural changes in the code base or routes occur - always re-read AGENT and README files and see if the information no longer aligns to the code. If so, raise this with the user to correct it.
+- The Docker image is not rebuilt automatically. After changing `src/`, `scripts/`, `pyproject.toml`, or `uv.lock`, run `docker compose build` before verifying behaviour via `docker compose run --rm app` — otherwise you're testing stale code baked into the last image.
 
 ## Repo map
 
 - `src/company_data_platform/` — `ingestion` (bulk, rest, streaming), `transform` (canonical), `storage`, `analytics`, `core`
+- `scripts/` — standalone entry-point scripts (not part of the installable package), e.g. `ingest_sono_search.py`
 - `tests/` — `unit`, `features`, `fixtures`
 - `docs/` — architecture, data model, ADRs, coding/engineering principles
+- `Dockerfile`, `docker-compose.yml` — containerised run path (`docker compose run --rm app`), no local Python required
+- `pyproject.toml` + `uv.lock` — dependency management via [uv](https://docs.astral.sh/uv/) (`uv sync --extra dev`), not `pip`/Poetry

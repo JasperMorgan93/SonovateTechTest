@@ -1,0 +1,7 @@
+services:
+  app:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./data/bronze/ch_search_result:/app/src/company_data_platform/storage/bronze/ch_search_result

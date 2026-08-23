@@ -12,5 +12,42 @@ script.
 - **Coding principles (for humans and agents working in this repo):** [docs/coding-principles.md](docs/coding-principles.md)
 - **Engineering principles (how we work, beyond code):** [docs/engineering-principles.md](docs/engineering-principles.md)
 
-Setup, run and test instructions will be added here once the implementation lands —
-this repo currently contains architecture/design docs only, no code yet.
+## Setup & running
+
+**Docker (no local Python required):**
+
+```bash
+cp .env.example .env   # then fill in COMPANIES_HOUSE_API_KEY
+docker compose run --rm app
+```
+
+This fetches every reachable page of `/search/companies?q=sono`, writes each raw page to
+`./data/bronze/ch_search_result/` on the host (mounted into the container), and prints the
+total number of matching companies (tech test Question 1).
+
+After changing `src/`, `scripts/`, `pyproject.toml`, or `uv.lock`, rebuild the image before
+running again:
+
+```bash
+docker compose build          # cache-aware — only rebuilds the layers that changed
+docker compose build --no-cache   # full rebuild from scratch, ignoring cache
+docker compose up --build     # rebuild and run in one step
+```
+
+**Local (non-Docker) dev, using [uv](https://docs.astral.sh/uv/):**
+
+```bash
+uv sync --extra dev
+```
+
+Set `COMPANIES_HOUSE_API_KEY` in your environment, then run:
+
+```bash
+uv run python scripts/ingest_sono_search.py
+```
+
+Run the test suite with:
+
+```bash
+uv run pytest -v
+```
