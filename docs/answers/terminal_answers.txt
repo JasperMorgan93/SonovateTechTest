@@ -1,0 +1,36 @@
+PS C:\SonovateTechTest> docker compose run --rm app scripts/run_all.py
+Container sonovatetechtest-app-run-c61cfa4d55cc Creating 
+Container sonovatetechtest-app-run-c61cfa4d55cc Created 
+ SONO SEARCH INGESTION COMPLETE 
+---
+Bronze files written to: /app/src/company_data_platform/storage/bronze/ch_search_result
+---
+Companies matching 'sono': 758
+
+ SONO SEARCH NORMALISATION COMPLETE 
+---
+Silver files written to: /app/src/company_data_platform/storage/silver
+---
+Companies: 2274
+Addresses: 2265
+Search matches: 2274
+
+ SONO SEARCH ANALYSIS COMPLETE 
+---
+Q1. Companies matching 'sono': 758
+Q2. Of those, active: 332
+Q3. Avg dissolved lifespan (days): 2158.3849878934625
+Q4. First limited-partnership created: 2013-09-19
+Q5. Companies with 'vate' in title (6): ['SONO PRIVATE LTD', 'SONOVATE BUSINESS SERVICES LIMITED', 'SONOVATE INTERNATIONAL HOLDINGS LIMITED', 'SONOVATE LIMITED', 'SONOVATE SOLUTIONS LTD', 'SONOVATECH LIMITED']
+Q6. Sum of premises digits by company type:
+    charitable-incorporated-organisation: 0
+    investment-company-with-variable-capital: 0
+    limited-partnership: 5179
+    llp: 13
+    ltd: 95134441
+    oversea-company: 0
+    private-limited-guarant-nsc: 2590
+    private-limited-guarant-nsc-limited-exemption: 132146
+    private-unlimited: 0
+    registered-overseas-entity: 1
+    uk-establishment: 0
