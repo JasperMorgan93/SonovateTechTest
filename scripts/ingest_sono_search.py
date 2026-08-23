@@ -3,17 +3,7 @@
 Run with: python scripts/ingest_sono_search.py
 
 Answers Sonovate tech test Question 1 ("how many companies match 'sono'")
-by reading `total_results` directly from the first page of the search —
-Companies House reports this on every page — then paginating and
-writing each raw page it can safely reach to the bronze writer's
-`ch_search_result/` subdirectory (see `storage/bronze/writer.py` for the
-exact location). Companies House returns errors once start_index goes
-beyond roughly the first 1000 results (see
-docs/BDD/data_engineer_test_spec.txt), so bronze coverage may be a
-prefix of the full result set for a query with more matches than that —
-the reported count is still accurate because it comes from the API's
-own total_results, not from how many pages were fetched.
-Requires COMPANIES_HOUSE_API_KEY to be set in the environment.
+by reading `total_results` directly from the first page of the search.
 """
 
 from datetime import datetime, timezone
