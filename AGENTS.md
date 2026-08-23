@@ -19,6 +19,7 @@ Canonical entry point for AI coding agents (Claude, GitHub Copilot, Cursor, or a
 - Structural or cross-cutting decisions get an ADR (`docs/adr/`), not a comment or a one-off choice buried in code.
 - Update the relevant docs (this file, `docs/`, `README.md`) when behaviour, interfaces, or conventions change.
 - Whenever structural changes in the code base or routes occur - always re-read AGENT and README files and see if the information no longer aligns to the code. If so, raise this with the user to correct it.
+- The Docker image is not rebuilt automatically. After changing `src/`, `scripts/`, `pyproject.toml`, or `uv.lock`, run `docker compose build` before verifying behaviour via `docker compose run --rm app` — otherwise you're testing stale code baked into the last image.
 
 ## Repo map
 

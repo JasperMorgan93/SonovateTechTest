@@ -72,6 +72,10 @@ def main() -> None:
         print(f"Ingestion failed while fetching '{QUERY}' results: {exc}")
         raise
 
+    print(" SONO SEARCH INGESTION COMPLETE ")
+    print("---")
+    print(f"Bronze files written to: {writer._base_dir / 'ch_search_result'}")
+    print("---")
     print(f"Companies matching '{QUERY}': {total_companies}")
 
 

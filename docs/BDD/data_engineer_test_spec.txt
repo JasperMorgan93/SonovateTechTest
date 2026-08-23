@@ -23,6 +23,7 @@ and show your working
 
 Questions:
 1. How many companies are there which match the search term “sono”?
+    Starts with? Contains the four letters? Or containers those letters in order?
 (Note the following questions are all in the context of the set of companies from Q1)
 2. Of these how many are active?
 3. Of those dissolved what is the average life of the company (incorporation date to cessation

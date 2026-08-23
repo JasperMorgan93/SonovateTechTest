@@ -25,6 +25,15 @@ This fetches every reachable page of `/search/companies?q=sono`, writes each raw
 `./data/bronze/ch_search_result/` on the host (mounted into the container), and prints the
 total number of matching companies (tech test Question 1).
 
+After changing `src/`, `scripts/`, `pyproject.toml`, or `uv.lock`, rebuild the image before
+running again:
+
+```bash
+docker compose build          # cache-aware — only rebuilds the layers that changed
+docker compose build --no-cache   # full rebuild from scratch, ignoring cache
+docker compose up --build     # rebuild and run in one step
+```
+
 **Local (non-Docker) dev, using [uv](https://docs.astral.sh/uv/):**
 
 ```bash
