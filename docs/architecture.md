@@ -132,17 +132,23 @@ src/company_data_platform/
 │   ├── bulk/                          # reserved: future BulkIngestionMethod
 │   └── streaming/                     # reserved: future StreamingIngestionMethod
 ├── transform/                       # NORMALISATION PHASE — bronze -> canonical -> silver
-│   ├── base.py                        # Normalizer ABC — read_bronze() -> map_to_canonical() -> upsert_silver()
+│   ├── base.py                        # Normalizer ABC — run() = read_bronze() -> map_to_canonical() ->
+│   │                                   # deduplicate() -> clean() -> upsert_silver(); RunSummary
 │   ├── canonical/
-│   │   └── company.py                   # CanonicalCompany, CanonicalAddress, CanonicalPreviousName, CanonicalSicCode
+│   │   └── company.py                   # CanonicalCompany, CanonicalAddress, CanonicalPreviousName, CanonicalSicCode, CanonicalSearchMatch
 │   └── companies_house/
 │       └── normalizer.py                # CompaniesHouseNormalizer(Normalizer)
 ├── storage/
 │   ├── db.py                          # engine/session, schema-qualified metadata (future — not built yet)
 │   ├── bronze_models.py               # future — not built yet
 │   ├── silver_models.py               # future — not built yet
-│   └── bronze/
-│       └── writer.py                    # file-based bronze writer (current, simplified stand-in for the above)
+│   ├── json_file.py                   # write_json_record — shared JSON-write mechanics for bronze and file-based silver
+│   ├── bronze/
+│   │   └── writer.py                    # file-based bronze writer (current, simplified stand-in for the above)
+│   └── silver/
+│       ├── base.py                      # SilverSink ABC — write_companies/write_addresses/write_search_matches
+│       └── file_sink.py                 # FileSilverSink(SilverSink) — file-based stand-in; a DataFrame or DB
+│                                         # sink is a new SilverSink implementation, not a change to transform/
 ├── analytics/
 │   └── sono_test_answers.py           # the 6 questions, pure functions over silver
 ├── pipeline.py                        # ingest(query) -> normalise(), parameterised
@@ -263,6 +269,8 @@ ingestion method produced a given bronze row.
 
 ## 8. Ingestion → normalisation flow (for this task)
 
+**Target design:**
+
 ```
 1. GET /search/companies?q=sono&items_per_page=100&start_index=...   (paginate to end)
    → bronze.ch_search_result   (one row per page, raw JSON + retrieved_at)
@@ -276,9 +284,26 @@ ingestion method produced a given bronze row.
 ```
 
 Search results already carry most fields needed (status, type, dates, address), but the
-profile call is still made per company: it's the authoritative resource per the guide
-(9), the "sono" result set is small, and having full profiles in bronze is what makes
-this project a usable foundation rather than a single-purpose script.
+profile call would still be made per company in the target design: it's the authoritative
+resource per the guide (9), the "sono" result set is small, and having full profiles in
+bronze is what makes this project a usable foundation rather than a single-purpose script.
+
+**Current implementation:** step 2 (company-profile ingestion) is not built — only
+`bronze.ch_search_result` exists. `CompaniesHouseNormalizer.map_to_canonical` therefore
+maps search-result items directly, which is enough to populate `CanonicalCompany`,
+`CanonicalAddress` (registered office), and `CanonicalSearchMatch` — everything the six
+questions need. `CanonicalPreviousName` and `CanonicalSicCode` stay unpopulated by this
+mapper, since search items don't carry that data; a future profile-based mapper (or a
+second source) can fill them without a canonical schema change. Mapping is defensive by
+design — real search results include items with no `company_status`/`date_of_creation` at
+all (externally-registered organisations) and empty addresses, both covered by fixtures in
+`tests/fixtures/`.
+
+`CompaniesHouseNormalizer.run()` persists through an injected `SilverSink`
+(`storage/silver/base.py`); the only implementation today is `FileSilverSink`, one JSON
+file per canonical record under `storage/silver/`, mirroring the file-based bronze store.
+Swapping in a DataFrame- or Postgres-backed sink later is a new `SilverSink`
+implementation — `transform/` doesn't change.
 
 ## 9. Testing strategy
 

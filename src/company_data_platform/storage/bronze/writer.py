@@ -7,14 +7,15 @@ deliberate simplification of the Postgres-backed design in
 docs/data-model.md for this first ingestion slice, not a database.
 """
 
-import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from company_data_platform.storage.json_file import write_json_record
+
 BRONZE_DIR = Path(__file__).parent
 
-_SEARCH_RESULT_SUBDIR = "ch_search_result"
+SEARCH_RESULT_SUBDIR = "ch_search_result"
 
 
 class BronzeWriter:
@@ -34,11 +35,7 @@ class BronzeWriter:
 
     def write_record(self, subdir: str, filename: str, record: dict[str, Any]) -> Path:
         """Write one JSON record to `<base_dir>/<subdir>/<filename>`."""
-        output_dir = self._base_dir / subdir
-        output_dir.mkdir(parents=True, exist_ok=True)
-        output_path = output_dir / filename
-        output_path.write_text(json.dumps(record, indent=2), encoding="utf-8")
-        return output_path
+        return write_json_record(self._base_dir / subdir, filename, record)
 
 
 class CompaniesHouseBronzeWriter(BronzeWriter):
@@ -79,4 +76,4 @@ class CompaniesHouseBronzeWriter(BronzeWriter):
             "payload": payload,
         }
 
-        return self.write_record(_SEARCH_RESULT_SUBDIR, filename, record)
+        return self.write_record(SEARCH_RESULT_SUBDIR, filename, record)
