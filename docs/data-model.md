@@ -114,7 +114,14 @@ second, differently-scoped search doesn't collide with this one.
 
 ## gold
 
-Reserved, no tables yet. See ADR 0002 for why this is deferred rather than built now.
+No persisted gold tables — still reserved per ADR 0002. For this first slice, "gold" is
+`storage/gold/loader.py`'s `load_gold_companies()`: it reads silver back in and performs,
+once, in memory, the same join the question-mapping table below describes
+(`company_search_match` scoped to one query -> `company` -> registered-office
+`company_address`), returning a single pandas DataFrame. `analytics/sono_test_answers.py`
+runs SQL (via DuckDB) against that DataFrame to answer the six questions, and
+`scripts/analyse_sono_search.py` is the runnable entry point (same pattern as
+`ingest_sono_search.py` / `normalise_sono_search.py`).
 
 ## Question → data mapping
 

@@ -28,9 +28,10 @@ COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/src /app/src
 COPY --from=builder /app/scripts /app/scripts
 
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app"
 
 USER appuser
 
 ENTRYPOINT ["python"]
-CMD ["scripts/ingest_sono_search.py"]
+CMD ["scripts/run_all.py"]
